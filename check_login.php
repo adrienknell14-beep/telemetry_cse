@@ -18,13 +18,10 @@ else{
     $result = mysqli_query ($connection, $sql1) or die (mysqli_error ($connection));
 
     if (mysqli_num_rows ($result) > 0){
-        while ($row = mysqli_fetch_assoc ($result)){
-            $_SESSION['username'] = $row['users_username'];
-            include 'includes/navbar.html';
-            include 'includes/logged.php';
-            
-	 
-        }
+        $row = mysqli_fetch_assoc($result);
+        $_SESSION['username'] = $row['users_username'];
+        header('Location: dashboard/dashboard.php');
+        exit;
     }
     else{
         include 'includes/navbar.html';
