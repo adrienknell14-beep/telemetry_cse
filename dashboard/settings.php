@@ -7,7 +7,7 @@
  *   stored locally in `dashboard/settings.json` and are read by
  *   `api_fetch.php` and `store_data.php` to control:
  *     - `api_base_url`: where to fetch live reactor JSON from
- *     - `poll_interval`: how often the client should poll for live data
+ *     - `poll_interval`: deprecated
  *     - `azure_blob_url` and `azure_sas_token`: optional Azure Blob
  *       configuration used to upload saved JSON files remotely. If the
  *       SAS token and blob URL are empty, files are stored locally in
@@ -40,6 +40,7 @@ if (file_exists($settingsPath)) {
 }
 
 $success = false;
+$error = null;
 // Handle save requests from the form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $settings['api_base_url'] = trim($_POST['api_base_url'] ?? '');
@@ -47,8 +48,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $settings['azure_blob_url'] = trim($_POST['azure_blob_url'] ?? '');
     $settings['azure_sas_token'] = trim($_POST['azure_sas_token'] ?? '');
     // Persist as pretty-printed JSON for easy manual editing in dev
-    file_put_contents($settingsPath, json_encode($settings, JSON_PRETTY_PRINT));
-    $success = true;
+    $bytesWritten = file_put_contents($settingsPath, json_encode($settings, JSON_PRETTY_PRINT));
+    if ($bytesWritten === false) {
+        $error = "Failed to save settings. Check file permissions for " . dirname($settingsPath);
+    } else {
+        $success = true;
+    }
 }
 
 $apiUrl = htmlspecialchars($settings['api_base_url'] ?? 'https://api.entreprise-b.com');
@@ -61,7 +66,10 @@ $azureSasToken = htmlspecialchars($settings['azure_sas_token'] ?? '');
     <h2>Dashboard Settings</h2>
 
     <?php if ($success): ?>
-        <div class="alert alert-success">Settings saved.</div>
+        <div class="alert alert-success">Settings saved successfully.</div>
+    <?php endif; ?>
+    <?php if ($error): ?>
+        <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
     <?php endif; ?>
 
     <form method="post" class="mb-4">
